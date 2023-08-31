@@ -49,6 +49,11 @@ namespace ROS2
         required.push_back(AZ_CRC_CE("SkidSteeringModelService"));
     }
 
+    void SkidSteeringControlComponent::Disable()
+    {
+        Deactivate();
+    }
+
     void SkidSteeringControlComponent::TwistReceived(const AZ::Vector3& linear, const AZ::Vector3& angular)
     {
         // Notify input system for vehicle dynamics. Only speed and steering is currently supported.

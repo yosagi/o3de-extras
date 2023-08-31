@@ -35,5 +35,6 @@ namespace ROS2
     private:
         // TwistNotificationBus::Handler overrides
         void TwistReceived(const AZ::Vector3& linear, const AZ::Vector3& angular) override;
+        void Disable() override;
     };
 } // namespace ROS2

@@ -46,6 +46,11 @@ namespace ROS2
         required.push_back(AZ_CRC_CE("PhysicsRigidBodyService"));
     }
 
+    void RigidBodyTwistControlComponent::Disable()
+    {
+        Deactivate();
+    }
+
     void RigidBodyTwistControlComponent::TwistReceived(const AZ::Vector3& linear, const AZ::Vector3& angular)
     {
         auto thisEntityId = GetEntityId();

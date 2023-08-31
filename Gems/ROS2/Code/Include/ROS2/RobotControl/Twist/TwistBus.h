@@ -25,6 +25,8 @@ namespace ROS2
         //! @param linear Linear speed in each axis, in robot reference frame, in m/s.
         //! @param angular Angular speed in each axis, in robot reference frame, in m/s.
         virtual void TwistReceived(const AZ::Vector3& linear, const AZ::Vector3& angular) = 0;
+
+        virtual void Disable() = 0;
     };
 
     using TwistNotificationBus = AZ::EBus<TwistNotifications>;
