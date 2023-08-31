@@ -36,6 +36,7 @@ namespace ROS2
         // Component overrides
         void Activate() override;
         void Deactivate() override;
+        static void GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided);
         //////////////////////////////////////////////////////////////////////////
 
     private:

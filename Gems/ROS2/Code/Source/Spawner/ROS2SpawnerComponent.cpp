@@ -58,10 +58,26 @@ namespace ROS2
             {
                 GetSpawnPointsNames(request, response);
             });
+
+        if (SpawnerCommandsInterface::Get() == nullptr)
+        {
+            SpawnerCommandsInterface::Register(this);
+        }
+    }
+
+    void ROS2SpawnerComponent::Spawn(const AZStd::string& spawnableName, const AZStd::string& spawnableNamespace, AZ::Transform transform)
+    {
+        AZ_Printf("ROS2SpawnerComponent", "Spawn interface cmd");
+        CreateEntity(spawnableName, spawnableNamespace, transform);
     }
 
     void ROS2SpawnerComponent::Deactivate()
     {
+        if (SpawnerCommandsInterface::Get() == this)
+        {
+            SpawnerCommandsInterface::Unregister(this);
+        }
+
         ROS2SpawnerComponentBase::Deactivate();
 
         m_getSpawnablesNamesService.reset();
@@ -89,6 +105,31 @@ namespace ROS2
         }
     }
 
+    void ROS2SpawnerComponent::CreateEntity(const AZStd::string& spawnableName, const AZStd::string& spawnableNamespace, AZ::Transform transform)
+    {
+        AZ_Printf("ROS2SpawnerComponent", "Creating entity %s/%s in (%f %f %f)", spawnableNamespace.c_str(), spawnableName.c_str(),
+                  transform.GetTranslation().GetX(), transform.GetTranslation().GetY(), transform.GetTranslation().GetZ())
+
+        if (!m_tickets.contains(spawnableName))
+        {
+            // if a ticket for this spawnable was not created but the spawnable name is correct, create the ticket and then use it to
+            // spawn an entity
+            auto spawnable = m_controller.GetSpawnables().find(spawnableName);
+            m_tickets.emplace(spawnable->first, AzFramework::EntitySpawnTicket(spawnable->second));
+        }
+
+        auto spawner = AZ::Interface<AzFramework::SpawnableEntitiesDefinition>::Get();
+
+        AzFramework::SpawnAllEntitiesOptionalArgs optionalArgs;
+
+        optionalArgs.m_preInsertionCallback = [this, transform, spawnableName, spawnableNamespace](auto id, auto view)
+        {
+            PreSpawn(id, view, transform, spawnableName, spawnableNamespace);
+        };
+
+        spawner->SpawnAllEntities(m_tickets.at(spawnableName), optionalArgs);
+    }
+
     void ROS2SpawnerComponent::SpawnEntity(const SpawnEntityRequest request, SpawnEntityResponse response)
     {
         AZStd::string spawnableName(request->name.c_str());
@@ -112,18 +153,6 @@ namespace ROS2
             return;
         }
 
-        if (!m_tickets.contains(spawnableName))
-        {
-            // if a ticket for this spawnable was not created but the spawnable name is correct, create the ticket and then use it to
-            // spawn an entity
-            auto spawnable = m_controller.GetSpawnables().find(spawnableName);
-            m_tickets.emplace(spawnable->first, AzFramework::EntitySpawnTicket(spawnable->second));
-        }
-
-        auto spawner = AZ::Interface<AzFramework::SpawnableEntitiesDefinition>::Get();
-
-        AzFramework::SpawnAllEntitiesOptionalArgs optionalArgs;
-
         AZ::Transform transform;
 
         if (spawnPoints.contains(spawnPointName))
@@ -141,12 +170,7 @@ namespace ROS2
                           1.0f };
         }
 
-        optionalArgs.m_preInsertionCallback = [this, transform, spawnableName, spawnableNamespace](auto id, auto view)
-        {
-            PreSpawn(id, view, transform, spawnableName, spawnableNamespace);
-        };
-
-        spawner->SpawnAllEntities(m_tickets.at(spawnableName), optionalArgs);
+        CreateEntity(spawnableName, spawnableNamespace, transform);
 
         response->success = true;
     }

@@ -33,5 +33,19 @@ namespace ROS2
         virtual AZStd::unordered_map<AZStd::string, SpawnPointInfo> GetAllSpawnPointInfos() const = 0;
     };
 
+    class SpawnerCommandsRequests : public AZ::ComponentBus
+    {
+    public:
+        AZ_RTTI(SpawnerCommandsRequests, "{3C42A3A1-1B8E-4800-9473-E4441315D7C9}");
+
+        static constexpr AZ::EBusHandlerPolicy HandlerPolicy = AZ::EBusHandlerPolicy::Single;
+
+        virtual ~SpawnerCommandsRequests() = default;
+
+        virtual void Spawn(const AZStd::string& spawnableName, const AZStd::string& spawnableNamespace, AZ::Transform transform) = 0;
+    };
+
     using SpawnerRequestsBus = AZ::EBus<SpawnerRequests>;
+    using SpawnerCommandsRequestsBus = AZ::EBus<SpawnerCommandsRequests>;
+    using SpawnerCommandsInterface = AZ::Interface<SpawnerCommandsRequests>;
 } // namespace ROS2

@@ -38,6 +38,12 @@ namespace ROS2
         bool ShouldActivateController() const override;
         //////////////////////////////////////////////////////////////////////////
 
+        static void GetProvidedServices(
+            AZ::ComponentDescriptor::DependencyArrayType& provided)
+        {
+            provided.push_back(AZ_CRC_CE("ROS2Spawner"));
+        }
+
         //////////////////////////////////////////////////////////////////////////
         // SpawnerRequestsBus::Handler overrides.
         const AZ::Transform& GetDefaultSpawnPose() const override;

@@ -176,6 +176,11 @@ namespace ROS2
         ROS2SensorComponent::Activate();
     }
 
+    void ROS2Lidar2DSensorComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
+    {
+        provided.push_back((AZ_CRC_CE("ROS2Lidar2D")));
+    }
+
     void ROS2Lidar2DSensorComponent::Deactivate()
     {
         ROS2SensorComponent::Deactivate();

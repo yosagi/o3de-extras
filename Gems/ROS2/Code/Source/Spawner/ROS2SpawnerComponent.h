@@ -20,6 +20,7 @@
 #include <gazebo_msgs/srv/get_world_properties.hpp>
 #include <gazebo_msgs/srv/spawn_entity.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include "ROS2/Spawner/SpawnerBus.h"
 
 namespace ROS2
 {
@@ -35,7 +36,7 @@ namespace ROS2
     using ROS2SpawnerComponentBase = AzFramework::Components::ComponentAdapter<ROS2SpawnerComponentController, ROS2SpawnerComponentConfig>;
     //! Manages robots spawning.
     //! Allows user to set spawnable prefabs in the Editor and spawn them using ROS2 service during the simulation.
-    class ROS2SpawnerComponent : public ROS2SpawnerComponentBase
+    class ROS2SpawnerComponent : public ROS2SpawnerComponentBase, public SpawnerCommandsRequestsBus::Handler
     {
     public:
         AZ_COMPONENT(ROS2SpawnerComponent, "{8ea91880-0067-11ee-be56-0242ac120002}", AZ::Component);
@@ -51,6 +52,14 @@ namespace ROS2
         //////////////////////////////////////////////////////////////////////////
         static void Reflect(AZ::ReflectContext* context);
 
+        static void GetProvidedServices(
+            AZ::ComponentDescriptor::DependencyArrayType& provided)
+        {
+            provided.push_back(AZ_CRC_CE("ROS2Spawner"));
+        }
+
+        void Spawn(const AZStd::string& spawnableName, const AZStd::string& spawnableNamespace, AZ::Transform transform) override;
+
     private:
         int m_counter = 1;
         AZStd::unordered_map<AZStd::string, AzFramework::EntitySpawnTicket> m_tickets;
@@ -62,6 +71,7 @@ namespace ROS2
 
         void GetAvailableSpawnableNames(const GetAvailableSpawnableNamesRequest request, GetAvailableSpawnableNamesResponse response);
         void SpawnEntity(const SpawnEntityRequest request, SpawnEntityResponse response);
+        void CreateEntity(const AZStd::string& spawnableName, const AZStd::string& spawnableNamespace, AZ::Transform transform);
         void PreSpawn(
             AzFramework::EntitySpawnTicket::Id,
             AzFramework::SpawnableEntityContainerView,
