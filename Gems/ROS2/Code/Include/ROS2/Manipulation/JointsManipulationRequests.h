@@ -85,6 +85,10 @@ namespace ROS2
         //! If it does not exist or some other error happened, error message is returned.
         virtual AZ::Outcome<void, AZStd::string> SetMaxJointEffort(const AZStd::string& jointName, JointEffort maxEffort) = 0;
 
+        //! Retrieve the namespace of the manipulator, which is the prefix of all joints.
+        //! @return the namespace of the manipulator.
+        virtual AZStd::string GetManipulatorNamespace() =0;
+
         //! Stop the joints movement in progress. It will keep the position in which it stopped.
         virtual void Stop() = 0;
     };

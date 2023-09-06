@@ -81,6 +81,22 @@ namespace ROS2
             joints[jointName] = jointInfo;
         }
 
+        AZStd::string GetManipulationNamespace(const AZ::EntityId& entityId)
+        {
+            AZStd::string manipulationNamespace;
+            AZ::Entity* entity = nullptr;
+            AZ::ComponentApplicationBus::BroadcastResult(entity, &AZ::ComponentApplicationRequests::FindEntity, entityId);
+            if (entity)
+            {
+                auto* frameComponent = Utils::GetGameOrEditorComponent<ROS2FrameComponent>(entity);
+                if (frameComponent)
+                {
+                    manipulationNamespace = frameComponent->GetNamespace();
+                }
+            }
+            return manipulationNamespace;
+        }
+
         ManipulationJoints GetAllEntityHierarchyJoints(const AZ::EntityId& entityId)
         { // Look for either Articulation Links or Hinge joints in entity hierarchy and collect them into a map.
             // Determine kind of joints through presence of appropriate controller
@@ -429,12 +445,36 @@ namespace ROS2
         }
     }
 
+    AZStd::string JointsManipulationComponent::GetManipulatorNamespace()
+    {
+        auto* frameComponent = Utils::GetGameOrEditorComponent<ROS2FrameComponent>(m_entity);
+        AZ_Assert(frameComponent, "ROS2FrameComponent is required for joints.");
+        if (frameComponent)
+        {
+            return frameComponent->GetNamespace();
+        }
+        return "";
+    }
+
     void JointsManipulationComponent::OnTick(float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
     {
         if (m_manipulationJoints.empty())
         {
+            const AZStd::string manipulatorNamespace = GetManipulatorNamespace();
+            AZ_Printf("JointsManipulationComponent", "Initializing joints manipulation component for namespace %s", manipulatorNamespace.c_str());
+            AZStd::unordered_map<AZStd::string, JointPosition> intialPositonNamespaced;
+            AZStd::transform(
+                m_initialPositions.begin(),
+                m_initialPositions.end(),
+                AZStd::inserter(intialPositonNamespaced, intialPositonNamespaced.end()),
+                [&manipulatorNamespace](const auto& pair)
+                {
+                    return AZStd::make_pair(ROS2::ROS2Names::GetNamespacedName(manipulatorNamespace, pair.first), pair.second);
+                });
+
             m_manipulationJoints = Internal::GetAllEntityHierarchyJoints(GetEntityId());
-            Internal::SetInitialPositions(m_manipulationJoints, m_initialPositions);
+
+            Internal::SetInitialPositions(m_manipulationJoints, intialPositonNamespaced);
             if (m_manipulationJoints.empty())
             {
                 AZ_Warning("JointsManipulationComponent", false, "No manipulation joints to handle!");

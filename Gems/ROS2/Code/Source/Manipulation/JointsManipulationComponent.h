@@ -60,6 +60,8 @@ namespace ROS2
         AZ::Outcome<void, AZStd::string> MoveJointToPosition(const AZStd::string& jointName, JointPosition position) override;
         //! @see ROS2::JointsManipulationRequestBus::Stop
         void Stop() override;
+        //! @see ROS2::JointsManipulationRequestBus::GetManipulatorNamespace
+        AZStd::string GetManipulatorNamespace() override;
 
     private:
         // Component overrides ...
