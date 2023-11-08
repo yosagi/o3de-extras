@@ -16,14 +16,14 @@ constexpr double secondEccentrictySquared =
     reciprocalFlattening * (2.0 - reciprocalFlattening) / ((1.0 - reciprocalFlattening) * (1.0 - reciprocalFlattening));
 
 // Based on http://wiki.gis.com/wiki/index.php/Geodetic_system
-namespace ROS2::GNSS
+namespace ROS2::Utils::GeodeticConversions
 {
-    double DegToRad(double degrees)
+    inline double DegToRad(double degrees)
     {
         return degrees * M_PI / 180.0;
     }
 
-    double RadToDeg(double radians)
+    inline double RadToDeg(double radians)
     {
         return radians * 180.0 / M_PI;
     }
@@ -51,16 +51,13 @@ namespace ROS2::GNSS
         const double referenceLatitudeRad = DegToRad(referenceLatitudeLongitudeAltitude.m_latitude);
         const double referenceLongitudeRad = DegToRad(referenceLatitudeLongitudeAltitude.m_longitude);
 
-        return {
-            -sin(referenceLongitudeRad) * pointToReferencePointECEF.m_x +
-                cos(referenceLongitudeRad) * pointToReferencePointECEF.m_y,
-            -sin(referenceLatitudeRad) * cos(referenceLongitudeRad) * pointToReferencePointECEF.m_x -
-                sin(referenceLatitudeRad) * sin(referenceLongitudeRad) * pointToReferencePointECEF.m_y +
-                cos(referenceLatitudeRad) * pointToReferencePointECEF.m_x,
-            cos(referenceLatitudeRad) * cos(referenceLongitudeRad) * pointToReferencePointECEF.m_x +
-                cos(referenceLatitudeRad) * sin(referenceLongitudeRad) * pointToReferencePointECEF.m_y +
-                sin(referenceLatitudeRad) * pointToReferencePointECEF.m_z
-        };
+        return { -sin(referenceLongitudeRad) * pointToReferencePointECEF.m_x + cos(referenceLongitudeRad) * pointToReferencePointECEF.m_y,
+                 -sin(referenceLatitudeRad) * cos(referenceLongitudeRad) * pointToReferencePointECEF.m_x -
+                     sin(referenceLatitudeRad) * sin(referenceLongitudeRad) * pointToReferencePointECEF.m_y +
+                     cos(referenceLatitudeRad) * pointToReferencePointECEF.m_z,
+                 cos(referenceLatitudeRad) * cos(referenceLongitudeRad) * pointToReferencePointECEF.m_x +
+                     cos(referenceLatitudeRad) * sin(referenceLongitudeRad) * pointToReferencePointECEF.m_y +
+                     sin(referenceLatitudeRad) * pointToReferencePointECEF.m_z };
     }
 
     WGS::Vector3d ENUToECEF(const WGS::WGS84Coordinate& referenceLatitudeLongitudeAltitude, const WGS::Vector3d& ENUPoint)

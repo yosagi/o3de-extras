@@ -7,6 +7,7 @@
  */
 
 #include "GeoreferenceLevelComponent.h"
+#include <ROS2/Georeference/GeoreferenceStructures.h>
 #include "GNSSFormatConversions.h"
 #include <AzCore/Component/TransformBus.h>
 #include <AzCore/Math/Matrix4x4.h>
@@ -17,13 +18,12 @@ namespace ROS2
 
     void GeoReferenceLevelComponent::Reflect(AZ::ReflectContext* context)
     {
+        WGS::WGS84Coordinate::Reflect(context);
         if (auto* serialize = azrtti_cast<AZ::SerializeContext*>(context))
         {
             serialize->Class<GeoReferenceLevelComponent>()
                 ->Version(1)
-                ->Field("EnuOriginAltitude", &GeoReferenceLevelComponent::m_EnuOriginAltitude)
-                ->Field("EnuOriginLatitude", &GeoReferenceLevelComponent::m_EnuOriginLatitude)
-                ->Field("EnuOriginLongitude", &GeoReferenceLevelComponent::m_EnuOriginLongitude)
+                ->Field("EnuOriginWSG84", &GeoReferenceLevelComponent::m_OriginLocation)
                 ->Field("EnuOriginLocationEntityId", &GeoReferenceLevelComponent::m_EnuOriginLocationEntityId);
 
             if (auto* editContext = serialize->GetEditContext())
@@ -40,22 +40,11 @@ namespace ROS2
                         AZ::Edit::UIHandlers::Default,
                         &GeoReferenceLevelComponent::m_EnuOriginLocationEntityId,
                         "ENU Origin Transform",
-                        "ENU (North-East-Up) origin in the level")
+                        "ENU (East-North-Up) origin in the level")
                     ->DataElement(
                         AZ::Edit::UIHandlers::Default,
-                        &GeoReferenceLevelComponent::m_EnuOriginAltitude,
-                        "Origin Altitude",
-                        "Origin altitude in meters, WGS84 ellipsoid")
-                    ->DataElement(
-                        AZ::Edit::UIHandlers::Default,
-                        &GeoReferenceLevelComponent::m_EnuOriginLatitude,
-                        "Origin Latitude",
-                        "Origin latitude in degrees, WGS84 ellipsoid, west is negative")
-                    ->DataElement(
-                        AZ::Edit::UIHandlers::Default,
-                        &GeoReferenceLevelComponent::m_EnuOriginLongitude,
-                        "Origin Longitude",
-                        "Origin longitude in degrees, WGS84 ellipsoid, south is negative");
+                        &GeoReferenceLevelComponent::m_OriginLocation,
+                        "ENU Origin Coordinates in WGS84","ENU Origin Coordinates in WGS84");
             }
         }
     }
@@ -77,25 +66,25 @@ namespace ROS2
         m_EnuOriginTransform = AZ::Transform::CreateIdentity();
         AZ::TransformBus::EventResult(m_EnuOriginTransform, m_EnuOriginLocationEntityId, &AZ::TransformBus::Events::GetWorldTM);
         m_EnuOriginTransform.Invert();
-        AZ_Printf("ROS2", "GeoReferenceLevelComponent::OnEntityActivated");
         AZ::EntityBus::Handler::BusDisconnect();
     }
 
     WGS::WGS84Coordinate GeoReferenceLevelComponent::ConvertFromLevelToWSG84(const AZ::Vector3& xyz)
     {
-        using namespace ROS2::GNSS;
-        const auto enu = m_EnuOriginTransform.TransformPoint(xyz);
+        using namespace ROS2::Utils::GeodeticConversions;
+        const auto enu = WGS::Vector3d(m_EnuOriginTransform.TransformPoint(xyz));
         const auto ecef =
-            ENUToECEF({ m_EnuOriginLatitude, m_EnuOriginLongitude, m_EnuOriginAltitude },enu);
+            ENUToECEF(m_OriginLocation,enu);
         return ECEFToWGS84(ecef);
     }
 
     AZ::Vector3 GeoReferenceLevelComponent::ConvertFromWSG84ToLevel(const WGS::WGS84Coordinate& latLon)
     {
-        using namespace ROS2::GNSS;
+        using namespace ROS2::Utils::GeodeticConversions;
         const auto ecef = WGS84ToECEF(latLon);
-        const auto enu = ECEFToENU({ m_EnuOriginLatitude, m_EnuOriginLongitude, m_EnuOriginAltitude }, ecef);
-        return m_EnuOriginTransform.TransformPoint(enu.ToVector3f());
+        const auto enu = ECEFToENU(m_OriginLocation, ecef);
+        AZ_Printf("ROS2", "ENU: %f %f %f", enu.m_x, enu.m_y, enu.m_z);
+        return m_EnuOriginTransform.GetInverse().TransformPoint(enu.ToVector3f());
     };
 
     AZ::Quaternion GeoReferenceLevelComponent::ConvertFromLevelRotationToENU()

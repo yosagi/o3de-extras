@@ -10,7 +10,7 @@
 #include <ROS2/Georeference/GeoreferenceStructures.h>
 #include <AzCore/Math/Matrix4x4.h>
 
-namespace ROS2::GNSS
+namespace ROS2::Utils::GeodeticConversions
 {
 
     //! Converts point in 1984 World Geodetic System (GS84) to Earth Centred Earth Fixed (ECEF)
