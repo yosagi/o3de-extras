@@ -145,6 +145,7 @@ namespace ROS2
 
     void ROS2SystemComponent::Activate()
     {
+        if(m_activated == true) return;
         InitClock();
         m_simulationClock->Activate();
         m_ros2Node = std::make_shared<rclcpp::Node>("o3de_ros2_node");
@@ -163,10 +164,12 @@ namespace ROS2
 
         ROS2RequestBus::Handler::BusConnect();
         AZ::TickBus::Handler::BusConnect();
+        m_activated = true;
     }
 
     void ROS2SystemComponent::Deactivate()
     {
+        if(m_activated==false) return;
         AZ::TickBus::Handler::BusDisconnect();
         ROS2RequestBus::Handler::BusDisconnect();
         m_simulationClock->Deactivate();
@@ -177,6 +180,7 @@ namespace ROS2
         m_executor.reset();
         m_simulationClock.reset();
         m_ros2Node.reset();
+        m_activated = false;
     }
 
     builtin_interfaces::msg::Time ROS2SystemComponent::GetROSTimestamp() const

@@ -84,6 +84,7 @@ namespace ROS2
         void InitClock();
 
         std::vector<geometry_msgs::msg::TransformStamped> m_frameTransforms;
+        bool m_activated=false;
 
         std::shared_ptr<rclcpp::Node> m_ros2Node;
         AZStd::shared_ptr<rclcpp::executors::SingleThreadedExecutor> m_executor;
